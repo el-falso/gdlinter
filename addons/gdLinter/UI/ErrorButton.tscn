@@ -1,0 +1,41 @@
+[gd_scene load_steps=9 format=3 uid="uid://bl23jxwmiyv68"]
+
+[ext_resource type="Script" path="res://addons/gdLinter/UI/ErrorButton.gd" id="1_jgnf2"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_mserg"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_mp80h"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tdjso"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4lagt"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v8xyu"]
+
+[sub_resource type="Image" id="Image_q8lpg"]
+data = {
+"data": PackedByteArray(255, 255, 255, 0, 255, 128, 110, 30, 255, 121, 107, 169, 255, 120, 107, 231, 255, 120, 107, 231, 255, 120, 108, 168, 255, 123, 114, 29, 255, 255, 255, 0, 255, 128, 110, 30, 255, 121, 107, 239, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 238, 255, 123, 114, 29, 255, 121, 107, 169, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 121, 107, 167, 255, 120, 107, 231, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 231, 255, 120, 107, 231, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 230, 255, 120, 108, 168, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 166, 255, 123, 114, 29, 255, 120, 107, 238, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 107, 255, 255, 120, 108, 237, 255, 128, 109, 28, 255, 255, 255, 0, 255, 123, 114, 29, 255, 121, 107, 167, 255, 120, 107, 231, 255, 120, 107, 230, 255, 120, 107, 166, 255, 128, 109, 28, 255, 255, 255, 0),
+"format": "RGBA8",
+"height": 8,
+"mipmaps": false,
+"width": 8
+}
+
+[sub_resource type="ImageTexture" id="ImageTexture_hkk5h"]
+image = SubResource("Image_q8lpg")
+
+[node name="ErrorButton" type="Button"]
+modulate = Color(0.77, 0.35, 0.35, 1)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 8.0
+grow_horizontal = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_mserg")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_mp80h")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_tdjso")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_4lagt")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_v8xyu")
+icon = SubResource("ImageTexture_hkk5h")
+flat = true
+alignment = 0
+script = ExtResource("1_jgnf2")
