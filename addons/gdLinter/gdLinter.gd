@@ -107,11 +107,11 @@ func on_resource_saved(resource: Resource):
 
 			var button: Button = _dock_ui.create_error(output_array[i])
 			button.pressed.connect(go_to_line.bind(current_line))
-		
-	_dock_ui.label.text = output_array[output_array.size()-2]
-	_dock_ui.label.modulate = Color(255, 255, 255)
-	bottom_panel_button.icon = icon_error
-	_dock_ui.script_text_editor = EditorInterface.get_script_editor().get_current_editor()
+
+		_dock_ui.label.text = output_array[output_array.size()-2]
+		_dock_ui.label.modulate = Color(255, 255, 255)
+		bottom_panel_button.icon = icon_error
+		_dock_ui.script_text_editor = EditorInterface.get_script_editor().get_current_editor()
 
 
 func go_to_line(line: int) -> void:
