@@ -95,23 +95,23 @@ func on_resource_saved(resource: Resource):
 		_dock_ui.label.text = output_array[0]
 		_dock_ui.label.modulate = color_success
 		bottom_panel_button.icon = icon_success
-		return
 	
 	# When errors are found create buttons in the dock
-	for i in output_array.size()-2:
-		var regex := RegEx.new()
-		regex.compile("\\d+")
-		var result := regex.search(output_array[i])
-		var current_line := int(result.strings[0])-1
-		highlight_lines.append(current_line)
-		
-		var button: Button = _dock_ui.create_error(output_array[i])
-		button.pressed.connect(go_to_line.bind(current_line))
-		
-	_dock_ui.label.text = output_array[output_array.size()-2]
-	_dock_ui.label.modulate = Color(255, 255, 255)
-	bottom_panel_button.icon = icon_error
-	_dock_ui.script_text_editor = EditorInterface.get_script_editor().get_current_editor()
+	else:
+		for i in output_array.size()-2:
+			var regex := RegEx.new()
+			regex.compile("\\d+")
+			var result := regex.search(output_array[i])
+			var current_line := int(result.strings[0])-1
+			highlight_lines.append(current_line)
+
+			var button: Button = _dock_ui.create_error(output_array[i])
+			button.pressed.connect(go_to_line.bind(current_line))
+
+		_dock_ui.label.text = output_array[output_array.size()-2]
+		_dock_ui.label.modulate = Color(255, 255, 255)
+		bottom_panel_button.icon = icon_error
+		_dock_ui.script_text_editor = EditorInterface.get_script_editor().get_current_editor()
 
 
 func go_to_line(line: int) -> void:
