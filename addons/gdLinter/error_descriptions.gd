@@ -1,5 +1,4 @@
-@tool
-extends Button
+extends Resource
 
 var error := {
 	#region Name Checks
@@ -50,19 +49,3 @@ var error := {
 	"no-else-return": "Validates if unnecessary else is present in case if (and each elif) body was ended with return."
 	#endregion
 }
-
-var color: Color = EditorInterface.get_editor_settings()\
-.get_setting("text_editor/theme/highlighting/comment_markers/critical_color")
-
-
-func _ready() -> void:
-	modulate = color
-
-	icon = EditorInterface.get_editor_theme().get_icon("Error", "EditorIcons")
-
-	var regex = RegEx.new()
-	regex.compile("(?<=\\()[^\\)]+")
-	var result := regex.search_all(text)
-	var error_type := result[-1].strings[0]
-	if error.has(error_type):
-		tooltip_text = error[error_type]
