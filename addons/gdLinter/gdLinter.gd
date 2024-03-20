@@ -24,6 +24,7 @@ var script_editor: ScriptEditor
 var _dock_ui: GDLinterDock
 var _is_gdlint_installed: bool
 var _ignore: Resource
+var _gdlint_path: String
 
 
 func _enter_tree() -> void:
@@ -37,6 +38,7 @@ func _enter_tree() -> void:
 	
 	script_editor = EditorInterface.get_script_editor()
 	script_editor.editor_script_changed.connect(_on_editor_script_changed)
+	_gdlint_path = get_gdlint_path()
 	get_gdlint_version()
 	prints("Loading GDLint Plugin success")
 
@@ -58,7 +60,7 @@ func _on_editor_script_changed(script: Script) -> void:
 
 func get_gdlint_version() -> void:
 	var output := []
-	OS.execute("gdlint", ["--version"], output)
+	OS.execute(_gdlint_path, ["--version"], output)
 	_is_gdlint_installed = true if not output[0].is_empty() else false
 	if _is_gdlint_installed:
 		_dock_ui.version.text = "Using %s" % output[0]
@@ -89,7 +91,7 @@ func on_resource_saved(resource: Resource) -> void:
 	var filepath: String = ProjectSettings.globalize_path(resource.resource_path)
 	var gdlint_output: Array = []
 	var output_array: PackedStringArray
-	var exit_code = OS.execute("gdlint", [filepath], gdlint_output, true)
+	var exit_code = OS.execute(_gdlint_path, [filepath], gdlint_output, true)
 	if not exit_code == -1:
 		var output_string: String = gdlint_output[0]
 		output_array = output_string.replace(filepath+":", "Line ").split("\n")
@@ -163,3 +165,12 @@ func get_current_editor() -> CodeEdit:
 	if current_editor == null:
 		return
 	return current_editor.get_base_editor() as CodeEdit
+
+
+func get_gdlint_path() -> String:
+	var output := []
+
+	OS.execute("python3", ["-m", "site", "--user-base"], output)
+	var python_bin_folder := (output[0] as String).strip_edges().path_join("bin")
+
+	return python_bin_folder.path_join("gdlint")
