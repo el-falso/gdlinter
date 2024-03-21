@@ -26,7 +26,7 @@ layout_mode = 2
 [node name="RichTextLabel" type="RichTextLabel" parent="VBoxContainer/Header"]
 layout_mode = 2
 bbcode_enabled = true
-text = "[center]GDLint Plugin 2.0.0[/center]"
+text = "[center]GDLint Plugin 2.0.1[/center]"
 fit_content = true
 
 [node name="LintedFile" type="PanelContainer" parent="VBoxContainer"]
