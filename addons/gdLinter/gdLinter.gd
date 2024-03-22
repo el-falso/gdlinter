@@ -102,7 +102,7 @@ func on_resource_saved(resource: Resource) -> void:
 	# Workaround until unique name bug is fixed
 	# https://github.com/Scony/godot-gdscript-toolkit/issues/284
 	# Hope I won't break other stuff with it
-	if output_array.size() and output_array[0] == "Line ":
+	if not output_array.size() or output_array[0] == "Line ":
 		printerr("gdLint Error: ", output_array, "\n File can't be linted!")
 		return
 	
