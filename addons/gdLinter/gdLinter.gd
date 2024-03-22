@@ -177,4 +177,13 @@ func get_gdlint_path() -> String:
 	var output := []
 	OS.execute("python3", ["-m", "site", "--user-base"], output)
 	var python_bin_folder := (output[0] as String).strip_edges().path_join("bin")
-	return python_bin_folder.path_join("gdlint")
+	if FileAccess.file_exists(python_bin_folder.path_join("gdlint")):
+		return python_bin_folder.path_join("gdlint")
+	
+	# Linux dirty hardcoded fallback
+	if OS.get_name() == "Linux":
+		if FileAccess.file_exists("/usr/bin/gdlint"):
+			return "/usr/bin/gdlint"
+	
+	# Global fallback
+	return "gdlint"
