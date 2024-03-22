@@ -113,19 +113,18 @@ func on_resource_saved(resource: Resource) -> void:
 		return
 	
 	# When errors are found create buttons in the dock
-	else:
-		for i in output_array.size()-2:
-			var regex := RegEx.new()
-			regex.compile("\\d+")
-			var result := regex.search(output_array[i])
-			if result:
-				var current_line := int(result.strings[0])-1
-				var error := output_array[i].rsplit(":", true, 1)
-				if len(error) > 1:
-					_dock_ui.create_item(current_line+1, error[1])
-					if _dock_ui.is_error_ignored(error[1]):
-						continue
-					highlight_lines.append(current_line)
+	for i in output_array.size()-2:
+		var regex := RegEx.new()
+		regex.compile("\\d+")
+		var result := regex.search(output_array[i])
+		if result:
+			var current_line := int(result.strings[0])-1
+			var error := output_array[i].rsplit(":", true, 1)
+			if len(error) > 1:
+				_dock_ui.create_item(current_line+1, error[1])
+				if _dock_ui.is_error_ignored(error[1]):
+					continue
+				highlight_lines.append(current_line)
 	
 	_dock_ui.set_problems_label(_dock_ui.num_problems)
 	_dock_ui.set_ignored_problems_label(_dock_ui.num_ignored_problems)
