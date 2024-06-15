@@ -27,6 +27,7 @@ _private_method_call = false
 _class_definitions_order = false
 _max_public_methods = false
 _function_arguments_number = false
+_max_returns = false
 _max_file_lines = false
 _trailing_whitespace = false
 _max_line_length = false
