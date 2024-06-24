@@ -180,6 +180,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Function Argument Number"
 
+[node name="MaxReturns" type="CheckBox" parent="PanelContainer/TabContainer/Design/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Max Returns"
+
 [node name="Format" type="MarginContainer" parent="PanelContainer/TabContainer"]
 unique_name_in_owner = true
 visible = false
@@ -253,6 +258,7 @@ text = "No Else Return"
 [connection signal="toggled" from="PanelContainer/TabContainer/Class/VBoxContainer/ClassDefinitionOrder" to="PanelContainer/TabContainer/Class" method="_on_class_definition_order_toggled"]
 [connection signal="toggled" from="PanelContainer/TabContainer/Design/VBoxContainer/MaxPublicMethods" to="PanelContainer/TabContainer/Design" method="_on_max_public_methods_toggled"]
 [connection signal="toggled" from="PanelContainer/TabContainer/Design/VBoxContainer/FunctionArgumentNumber" to="PanelContainer/TabContainer/Design" method="_on_function_argument_number_toggled"]
+[connection signal="toggled" from="PanelContainer/TabContainer/Design/VBoxContainer/MaxReturns" to="PanelContainer/TabContainer/Design" method="_on_max_returns_toggled"]
 [connection signal="toggled" from="PanelContainer/TabContainer/Format/VBoxContainer/MaxFileLines" to="PanelContainer/TabContainer/Format" method="_on_max_file_lines_toggled"]
 [connection signal="toggled" from="PanelContainer/TabContainer/Format/VBoxContainer/TrailingWhitespaceCheckBox" to="PanelContainer/TabContainer/Format" method="_on_trailing_whitespace_check_box_toggled"]
 [connection signal="toggled" from="PanelContainer/TabContainer/Format/VBoxContainer/MaxLineLength" to="PanelContainer/TabContainer/Format" method="_on_max_line_length_toggled"]
