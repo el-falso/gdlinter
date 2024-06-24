@@ -35,6 +35,7 @@ var error := {
 	#region Design Checks
 	"max-public-methods": "Validates maximum number of public methods (class-level functions).",
 	"function-arguments-number": "Validates number of function arguments.",
+	"max-returns": "Validates maximum number of function returns.",
 	#endregion
 
 	#region Format Checks
