@@ -31,6 +31,7 @@ extends Resource
 @export_group("Design Checks")
 @export var _max_public_methods: bool = false
 @export var _function_arguments_number: bool = false
+@export var _max_returns: bool = false
 
 @export_group("Format Checks")
 @export var _max_file_lines: bool = false
