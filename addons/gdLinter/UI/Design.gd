@@ -12,6 +12,7 @@ func init() -> void:
 	_owner = owner
 	max_public_methods.button_pressed = _owner.ignore.get("_max_public_methods")
 	function_argument_number.button_pressed = _owner.ignore.get("_function_arguments_number")
+	max_returns.button_pressed = _owner.ignore.get("_max_returns")
 
 
 func _on_max_public_methods_toggled(toggled_on: bool) -> void:
