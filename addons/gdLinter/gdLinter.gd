@@ -169,6 +169,11 @@ func get_current_editor() -> CodeEdit:
 
 
 func get_gdlint_path() -> String:
+	var project_gdlint_path: String = ProjectSettings.get_setting("debug/settings/Tools/gdlint_path", "")
+	
+	if(project_gdlint_path.length()):
+		return project_gdlint_path
+
 	if OS.get_name() == "Windows":
 		return "gdlint"
 	
