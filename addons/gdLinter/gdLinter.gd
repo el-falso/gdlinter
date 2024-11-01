@@ -28,6 +28,12 @@ var _gdlint_path: String
 
 
 func _enter_tree() -> void:
+	var project_gdlint_enabled: bool = ProjectSettings.get_setting("debug/settings/Tools/gdlint_enabled", true)
+	
+	if(! project_gdlint_enabled):
+		print_rich("[color=yellow]Loading GDLint Plugin [u]disabled[/u] in [b]Project Settings -> Debug -> Tools[/b][/color]")
+		return
+
 	# install the GDLint dock
 	_dock_ui = DockScene.instantiate()
 	_dock_ui.gd_linter = self
