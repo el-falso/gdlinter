@@ -28,6 +28,11 @@ var _gdlint_path: String
 
 
 func _enter_tree() -> void:
+	if not ProjectSettings.has_setting("gd_linter/gdlint_command"):
+		ProjectSettings.set("gd_linter/gdlint_command", "")
+
+	add_tool_menu_item("Install gdlint with pip", install_gdlint)
+
 	# install the GDLint dock
 	_dock_ui = DockScene.instantiate()
 	_dock_ui.gd_linter = self
@@ -168,7 +173,16 @@ func get_current_editor() -> CodeEdit:
 	return current_editor.get_base_editor() as CodeEdit
 
 
+func install_gdlint(python_command := "python"):
+	OS.execute(python_command, ["-m", "pip", "install", "gdtoolkit==%s.*" % [Engine.get_version_info()["major"]]], [], false, true)
+
+
 func get_gdlint_path() -> String:
+	if ProjectSettings.has_setting("gd_linter/gdlint_command"):
+		var setting:String = ProjectSettings.get("gd_linter/gdlint_command").strip_edges()
+		if not setting.is_empty():
+			return setting
+
 	if OS.get_name() == "Windows":
 		return "gdlint"
 	
