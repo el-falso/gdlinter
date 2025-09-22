@@ -4,6 +4,8 @@ extends EditorPlugin
 
 const DockScene := preload("res://addons/gdLinter/UI/Dock.tscn")
 
+const SETTINGS_GDLINT_ENABLED = "debug/settings/Tools/gdlint_enabled"
+const SETTINGS_GDLINT_PATH = "debug/settings/Tools/gdlint_path"
 
 var icon_error := EditorInterface.get_editor_theme().get_icon("Error", "EditorIcons")
 var color_error: Color = EditorInterface.get_editor_settings()\
@@ -28,10 +30,20 @@ var _gdlint_path: String
 
 
 func _enter_tree() -> void:
-	if not ProjectSettings.has_setting("gd_linter/gdlint_command"):
-		ProjectSettings.set("gd_linter/gdlint_command", "")
+	if not ProjectSettings.has_setting(SETTINGS_GDLINT_ENABLE):
+		ProjectSettings.set_setting(SETTINGS_GDLINT_ENABLE, "")
+	if not ProjectSettings.has_setting(SETTINGS_GDLINT_PATH):
+		ProjectSettings.set_setting(SETTINGS_GDLINT_PATH, "")
 
 	add_tool_menu_item("Install gdlint with pip", install_gdlint)
+  
+	var project_gdlint_enabled: bool = ProjectSettings.get_setting(SETTINGS_GDLINT_ENABLED, true)
+	
+	if(! project_gdlint_enabled):
+		var message = "[color=yellow]Loading GDLint Plugin [u]disabled[/u]"
+		message += " in [b]Project Settings -> Debug -> Tools[/b][/color]"
+		print_rich(message)
+		return
 
 	# install the GDLint dock
 	_dock_ui = DockScene.instantiate()
@@ -57,6 +69,12 @@ func _enter_tree() -> void:
 	#if not highlight_lines.is_empty():
 		#set_line_color(color_error)
 
+func exec(path: String, arguments: PackedStringArray, output: Array=[],read_stderr: bool=false, open_console: bool=false):
+	if OS.get_name() == "Windows":
+		var args = PackedStringArray(["/C"]) + PackedStringArray([path]) + arguments
+		OS.execute("CMD.exe", args, output, read_stderr, open_console)
+	else:
+		OS.execute(path, arguments, output, read_stderr, open_console)
 
 func _on_editor_script_changed(script: Script) -> void:
 	_dock_ui.clear_items()
@@ -65,7 +83,7 @@ func _on_editor_script_changed(script: Script) -> void:
 
 func get_gdlint_version() -> void:
 	var output := []
-	OS.execute(_gdlint_path, ["--version"], output)
+	exec(_gdlint_path, ["--version"], output)
 	_is_gdlint_installed = true if not output[0].is_empty() else false
 	if _is_gdlint_installed:
 		_dock_ui.version.text = "Using %s" % output[0]
@@ -96,7 +114,7 @@ func on_resource_saved(resource: Resource) -> void:
 	var filepath: String = ProjectSettings.globalize_path(resource.resource_path)
 	var gdlint_output: Array = []
 	var output_array: PackedStringArray
-	var exit_code = OS.execute(_gdlint_path, [filepath], gdlint_output, true)
+	var exit_code = exec(_gdlint_path, [filepath], gdlint_output, true)
 	if not exit_code == -1:
 		var output_string: String = gdlint_output[0]
 		output_array = output_string.replace(filepath+":", "Line ").split("\n")
@@ -178,10 +196,10 @@ func install_gdlint(python_command := "python"):
 
 
 func get_gdlint_path() -> String:
-	if ProjectSettings.has_setting("gd_linter/gdlint_command"):
-		var setting:String = ProjectSettings.get("gd_linter/gdlint_command").strip_edges()
-		if not setting.is_empty():
-			return setting
+	var project_gdlint_path: String = ProjectSettings.get_setting(SETTINGS_GDLINT_PATH, "")
+	
+	if(project_gdlint_path.length()):
+		return project_gdlint_path
 
 	if OS.get_name() == "Windows":
 		return "gdlint"
