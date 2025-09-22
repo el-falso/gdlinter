@@ -30,8 +30,8 @@ var _gdlint_path: String
 
 
 func _enter_tree() -> void:
-	if not ProjectSettings.has_setting(SETTINGS_GDLINT_ENABLE):
-		ProjectSettings.set_setting(SETTINGS_GDLINT_ENABLE, "")
+	if not ProjectSettings.has_setting(SETTINGS_GDLINT_ENABLED):
+		ProjectSettings.set_setting(SETTINGS_GDLINT_ENABLED, "")
 	if not ProjectSettings.has_setting(SETTINGS_GDLINT_PATH):
 		ProjectSettings.set_setting(SETTINGS_GDLINT_PATH, "")
 
@@ -39,7 +39,7 @@ func _enter_tree() -> void:
   
 	var project_gdlint_enabled: bool = ProjectSettings.get_setting(SETTINGS_GDLINT_ENABLED, true)
 	
-	if(! project_gdlint_enabled):
+	if(!project_gdlint_enabled):
 		var message = "[color=yellow]Loading GDLint Plugin [u]disabled[/u]"
 		message += " in [b]Project Settings -> Debug -> Tools[/b][/color]"
 		print_rich(message)
