@@ -192,7 +192,11 @@ func get_current_editor() -> CodeEdit:
 
 
 func install_gdlint(python_command := "python"):
-	OS.execute(python_command, ["-m", "pip", "install", "gdtoolkit==%s.*" % [Engine.get_version_info()["major"]]], [], false, true)
+	var install_output := []
+	OS.execute(python_command, ["-m", "pip", "install", "gdtoolkit==%s.*" % [Engine.get_version_info()["major"]]], install_output)
+	if not install_output.is_empty():
+		print_rich("[color=green]Install GDLint with pip:[/color]")
+		print(install_output[0])
 
 
 func get_gdlint_path() -> String:
