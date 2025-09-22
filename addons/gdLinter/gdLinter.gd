@@ -30,6 +30,13 @@ var _gdlint_path: String
 
 
 func _enter_tree() -> void:
+	if not ProjectSettings.has_setting(SETTINGS_GDLINT_ENABLE):
+		ProjectSettings.set_setting(SETTINGS_GDLINT_ENABLE, "")
+	if not ProjectSettings.has_setting(SETTINGS_GDLINT_PATH):
+		ProjectSettings.set_setting(SETTINGS_GDLINT_PATH, "")
+
+	add_tool_menu_item("Install gdlint with pip", install_gdlint)
+  
 	var project_gdlint_enabled: bool = ProjectSettings.get_setting(SETTINGS_GDLINT_ENABLED, true)
 	
 	if(! project_gdlint_enabled):
@@ -182,6 +189,10 @@ func get_current_editor() -> CodeEdit:
 	if current_editor == null:
 		return
 	return current_editor.get_base_editor() as CodeEdit
+
+
+func install_gdlint(python_command := "python"):
+	OS.execute(python_command, ["-m", "pip", "install", "gdtoolkit==%s.*" % [Engine.get_version_info()["major"]]], [], false, true)
 
 
 func get_gdlint_path() -> String:
