@@ -52,6 +52,12 @@ func _enter_tree() -> void:
 	#if not highlight_lines.is_empty():
 		#set_line_color(color_error)
 
+func exec(path: String, arguments: PackedStringArray, output: Array=[],read_stderr: bool=false, open_console: bool=false):
+	if OS.get_name() == "Windows":
+		var args = PackedStringArray(["/C"]) + PackedStringArray([path]) + arguments
+		OS.execute("CMD.exe", args, output, read_stderr, open_console)
+	else:
+		OS.execute(path, arguments, output, read_stderr, open_console)
 
 func _on_editor_script_changed(script: Script) -> void:
 	_dock_ui.clear_items()
@@ -60,7 +66,7 @@ func _on_editor_script_changed(script: Script) -> void:
 
 func get_gdlint_version() -> void:
 	var output := []
-	OS.execute(_gdlint_path, ["--version"], output)
+	exec(_gdlint_path, ["--version"], output)
 	_is_gdlint_installed = true if not output[0].is_empty() else false
 	if _is_gdlint_installed:
 		_dock_ui.version.text = "Using %s" % output[0]
@@ -91,7 +97,7 @@ func on_resource_saved(resource: Resource) -> void:
 	var filepath: String = ProjectSettings.globalize_path(resource.resource_path)
 	var gdlint_output: Array = []
 	var output_array: PackedStringArray
-	var exit_code = OS.execute(_gdlint_path, [filepath], gdlint_output, true)
+	var exit_code = exec(_gdlint_path, [filepath], gdlint_output, true)
 	if not exit_code == -1:
 		var output_string: String = gdlint_output[0]
 		output_array = output_string.replace(filepath+":", "Line ").split("\n")
