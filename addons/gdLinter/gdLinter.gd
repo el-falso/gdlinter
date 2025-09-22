@@ -4,6 +4,8 @@ extends EditorPlugin
 
 const DockScene := preload("res://addons/gdLinter/UI/Dock.tscn")
 
+const SETTINGS_GDLINT_ENABLED = "debug/settings/Tools/gdlint_enabled"
+const SETTINGS_GDLINT_PATH = "debug/settings/Tools/gdlint_path"
 
 var icon_error := EditorInterface.get_editor_theme().get_icon("Error", "EditorIcons")
 var color_error: Color = EditorInterface.get_editor_settings()\
@@ -28,6 +30,14 @@ var _gdlint_path: String
 
 
 func _enter_tree() -> void:
+	var project_gdlint_enabled: bool = ProjectSettings.get_setting(SETTINGS_GDLINT_ENABLED, true)
+	
+	if(! project_gdlint_enabled):
+		var message = "[color=yellow]Loading GDLint Plugin [u]disabled[/u]"
+		message += " in [b]Project Settings -> Debug -> Tools[/b][/color]"
+		print_rich(message)
+		return
+
 	# install the GDLint dock
 	_dock_ui = DockScene.instantiate()
 	_dock_ui.gd_linter = self
@@ -175,6 +185,11 @@ func get_current_editor() -> CodeEdit:
 
 
 func get_gdlint_path() -> String:
+	var project_gdlint_path: String = ProjectSettings.get_setting(SETTINGS_GDLINT_PATH, "")
+	
+	if(project_gdlint_path.length()):
+		return project_gdlint_path
+
 	if OS.get_name() == "Windows":
 		return "gdlint"
 	
