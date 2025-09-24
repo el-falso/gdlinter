@@ -31,7 +31,7 @@ var _gdlint_path: String
 
 func _enter_tree() -> void:
 	if not ProjectSettings.has_setting(SETTINGS_GDLINT_ENABLED):
-		ProjectSettings.set_setting(SETTINGS_GDLINT_ENABLED, "")
+		ProjectSettings.set_setting(SETTINGS_GDLINT_ENABLED, true)
 	if not ProjectSettings.has_setting(SETTINGS_GDLINT_PATH):
 		ProjectSettings.set_setting(SETTINGS_GDLINT_PATH, "")
 
