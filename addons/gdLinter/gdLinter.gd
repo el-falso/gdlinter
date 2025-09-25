@@ -6,6 +6,9 @@ const DockScene := preload("res://addons/gdLinter/UI/Dock.tscn")
 
 const SETTINGS_GDLINT_ENABLED = "debug/settings/Tools/gdlint_enabled"
 const SETTINGS_GDLINT_PATH = "debug/settings/Tools/gdlint_path"
+const SETTINGS_PYTHON_PATH = "debug/settings/Tools/python_path"
+
+const GDLINT_PYTHON_MODULE = "gdtoolkit.linter"
 
 var icon_error := EditorInterface.get_editor_theme().get_icon("Error", "EditorIcons")
 var color_error: Color = EditorInterface.get_editor_settings()\
@@ -24,9 +27,98 @@ var item_lists: Array[ItemList]
 var script_editor: ScriptEditor
 
 var _dock_ui: GDLinterDock
-var _is_gdlint_installed: bool
 var _ignore: Resource
-var _gdlint_path: String
+
+var _gdlint_path: String = ""
+var _gdlint_version: String = ""
+
+func get_python_path() -> String:
+	return str(ProjectSettings.get_setting(SETTINGS_PYTHON_PATH, "py" if (OS.get_name() == "Windows") else "python3")).strip()
+
+func get_current_gdlint_path() -> String:
+	return _gdlint_path
+
+func get_current_gdlint_version() -> String:
+	return _gdlint_version
+
+func is_current_gdlint_installed() -> bool:
+	return get_current_gdlint_version().is_empty()
+
+
+func update_gdlint_info() -> void:
+	_gdlint_path = _get_gdlint_command()
+	_gdlint_version = ""
+	
+	if get_current_gdlint_path().is_empty():
+		return
+	
+	_gdlint_version = _get_gdlint_command_version(get_current_gdlint_path())
+
+	# couldn't this be handled in the doc's code instead of over here?
+	if is_current_gdlint_installed():
+		_dock_ui.version.text = "Using gdlint %s" % get_current_gdlint_version()
+	else:
+		_dock_ui.version.text = "gdlint not found!"
+
+func _get_gdlint_command_version(command:String) -> String:
+	var output := []
+	exec(command, ["--version"], output)
+	if output.is_empty():
+		return ""
+	var ver_str := "".join(output).strip()
+	if ver_str.to_lower().starts_with("gdlint"):
+		ver_str = ver_str.slice("gdlint".length())
+	return ver_str.strip()
+	
+func _get_gdlint_command(allow_file_ui := false) -> String:
+	var project_gdlint_path: String = ProjectSettings.get_setting(SETTINGS_GDLINT_PATH, "").strip()
+	
+	if not project_gdlint_path.is_empty():
+		return project_gdlint_path
+
+	# The stock ways that one would call gdlint
+	if OS.get_name() == "Windows":
+		if not _get_gdlint_command_version("gdlint").is_empty()
+			return "gdlint"
+	
+	if not get_python_path().is_empty()::
+		var output := []
+		exec(get_python_path(), ["-m", "site", "--user-base"], output)
+		var python_bin_folder := (output[0] as String).strip_edges().path_join("bin")
+		var gdlint_exe := python_bin_folder.path_join("gdlint")
+		if FileAccess.file_exists(gdlint_exe) and not _get_gdlint_command_version(gdlint_exe).is_empty():
+			return gdlint_exe
+
+		# Attempt to make the command a call to the python module directly (may not work since the arguments are included in the command name;
+		# and making that happen is alot of refactioring for a single possible case)
+		var python_call_module_hack := "%s -m %s" % [get_python_path(), GDLINT_PYTHON_MODULE]
+		if not _get_gdlint_command_version(python_call_module_hack).is_empty():
+			return python_call_module_hack
+
+	# Alright then, hard way it is...
+
+	# Linux dirty hardcoded fallback
+	if OS.get_name() == "Linux" or OS.get_name().ends_with("BSD"):
+		if FileAccess.file_exists("/usr/bin/gdlint") and not _get_gdlint_command_version("/usr/bin/gdlint").is_empty():
+			return "/usr/bin/gdlint"
+
+	if allow_file_ui:
+		var dia := EditorFileDialog()
+		dia.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
+		dia.access = EditorFileDialog.ACCESS_FILESYSTEM
+		dia.dialog_hide_on_ok = true
+		dia.show_hidden_files = true
+		dia.title = "Find gdlint executable"
+		dia.cancel_button_text = "Try default ('gdlint')"
+		dia.popup_file_dialog()
+		while dia.visible:
+			await dia.visibility_changed
+		# The user would never lie to us
+		if not dia.current_file.is_empty():
+			reutrn dia.current_file
+
+	# Global fallback
+	return "gdlint"
 
 
 func _enter_tree() -> void:
@@ -34,8 +126,11 @@ func _enter_tree() -> void:
 		ProjectSettings.set_setting(SETTINGS_GDLINT_ENABLED, true)
 	if not ProjectSettings.has_setting(SETTINGS_GDLINT_PATH):
 		ProjectSettings.set_setting(SETTINGS_GDLINT_PATH, "")
+	if not ProjectSettings.has_setting(SETTINGS_PYTHON_PATH):
+		ProjectSettings.set_setting(SETTINGS_PYTHON_PATH, "py" if (OS.get_name() == "Windows") else "python3")
 
 	add_tool_menu_item("Install gdlint with pip", install_gdlint)
+	add_tool_menu_item("Re-find gdlint executable", update_gdlint_info.bind(true))
   
 	var project_gdlint_enabled: bool = ProjectSettings.get_setting(SETTINGS_GDLINT_ENABLED, true)
 	
@@ -55,8 +150,7 @@ func _enter_tree() -> void:
 	
 	script_editor = EditorInterface.get_script_editor()
 	script_editor.editor_script_changed.connect(_on_editor_script_changed)
-	_gdlint_path = get_gdlint_path()
-	get_gdlint_version()
+	update_gdlint_info()
 	prints("Loading GDLint Plugin success")
 
 # TODO: Reenable again?
@@ -69,7 +163,8 @@ func _enter_tree() -> void:
 	#if not highlight_lines.is_empty():
 		#set_line_color(color_error)
 
-func exec(path: String, arguments: PackedStringArray, output: Array=[],read_stderr: bool=false, open_console: bool=false):
+# arguments accepts both Arrays and PackedStringArrays
+func exec(path: String, arguments: Variant, output: Array=[],read_stderr: bool=false, open_console: bool=false):
 	if OS.get_name() == "Windows":
 		var args = PackedStringArray(["/C"]) + PackedStringArray([path]) + arguments
 		OS.execute("CMD.exe", args, output, read_stderr, open_console)
@@ -79,16 +174,6 @@ func exec(path: String, arguments: PackedStringArray, output: Array=[],read_stde
 func _on_editor_script_changed(script: Script) -> void:
 	_dock_ui.clear_items()
 	on_resource_saved(script)
-
-
-func get_gdlint_version() -> void:
-	var output := []
-	exec(_gdlint_path, ["--version"], output)
-	_is_gdlint_installed = true if not output[0].is_empty() else false
-	if _is_gdlint_installed:
-		_dock_ui.version.text = "Using %s" % output[0]
-	else:
-		_dock_ui.version.text = "gdlint not found!"
 
 
 func _exit_tree() -> void:
@@ -114,7 +199,7 @@ func on_resource_saved(resource: Resource) -> void:
 	var filepath: String = ProjectSettings.globalize_path(resource.resource_path)
 	var gdlint_output: Array = []
 	var output_array: PackedStringArray
-	var exit_code = exec(_gdlint_path, [filepath], gdlint_output, true)
+	var exit_code = exec(get_gdlint_path(), [filepath], gdlint_output, true)
 	if not exit_code == -1:
 		var output_string: String = gdlint_output[0]
 		output_array = output_string.replace(filepath+":", "Line ").split("\n")
@@ -191,34 +276,11 @@ func get_current_editor() -> CodeEdit:
 	return current_editor.get_base_editor() as CodeEdit
 
 
-func install_gdlint(python_command := "python"):
+func install_gdlint(python_command := ""):
+	if python_command.is_empty():
+		python_command = get_python_path()
 	var install_output := []
-	OS.execute(python_command, ["-m", "pip", "install", "gdtoolkit==%s.*" % [Engine.get_version_info()["major"]]], install_output)
+	exec(python_command, ["-m", "pip", "--upgrade", "install", "gdtoolkit==%s.*" % [Engine.get_version_info()["major"]]], install_output)
 	if not install_output.is_empty():
 		print_rich("[color=green]Install GDLint with pip:[/color]")
 		print(install_output[0])
-
-
-func get_gdlint_path() -> String:
-	var project_gdlint_path: String = ProjectSettings.get_setting(SETTINGS_GDLINT_PATH, "")
-	
-	if(project_gdlint_path.length()):
-		return project_gdlint_path
-
-	if OS.get_name() == "Windows":
-		return "gdlint"
-	
-	# macOS & Linux
-	var output := []
-	OS.execute("python3", ["-m", "site", "--user-base"], output)
-	var python_bin_folder := (output[0] as String).strip_edges().path_join("bin")
-	if FileAccess.file_exists(python_bin_folder.path_join("gdlint")):
-		return python_bin_folder.path_join("gdlint")
-	
-	# Linux dirty hardcoded fallback
-	if OS.get_name() == "Linux":
-		if FileAccess.file_exists("/usr/bin/gdlint"):
-			return "/usr/bin/gdlint"
-	
-	# Global fallback
-	return "gdlint"
