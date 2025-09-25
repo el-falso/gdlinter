@@ -69,7 +69,8 @@ func _enter_tree() -> void:
 	#if not highlight_lines.is_empty():
 		#set_line_color(color_error)
 
-func exec(path: String, arguments: PackedStringArray, output: Array=[],read_stderr: bool=false, open_console: bool=false):
+# arguments accepts both Arrays and PackedStringArrays
+func exec(path: String, arguments: Variant, output: Array=[],read_stderr: bool=false, open_console: bool=false):
 	if OS.get_name() == "Windows":
 		var args = PackedStringArray(["/C"]) + PackedStringArray([path]) + arguments
 		OS.execute("CMD.exe", args, output, read_stderr, open_console)
@@ -193,7 +194,7 @@ func get_current_editor() -> CodeEdit:
 
 func install_gdlint(python_command := "python"):
 	var install_output := []
-	OS.execute(python_command, ["-m", "pip", "install", "gdtoolkit==%s.*" % [Engine.get_version_info()["major"]]], install_output)
+	exec(python_command, ["-m", "pip", "install", "gdtoolkit==%s.*" % [Engine.get_version_info()["major"]]], install_output)
 	if not install_output.is_empty():
 		print_rich("[color=green]Install GDLint with pip:[/color]")
 		print(install_output[0])
@@ -210,7 +211,7 @@ func get_gdlint_path() -> String:
 	
 	# macOS & Linux
 	var output := []
-	OS.execute("python3", ["-m", "site", "--user-base"], output)
+	exec("python3", ["-m", "site", "--user-base"], output)
 	var python_bin_folder := (output[0] as String).strip_edges().path_join("bin")
 	if FileAccess.file_exists(python_bin_folder.path_join("gdlint")):
 		return python_bin_folder.path_join("gdlint")
