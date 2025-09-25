@@ -24,9 +24,76 @@ var item_lists: Array[ItemList]
 var script_editor: ScriptEditor
 
 var _dock_ui: GDLinterDock
-var _is_gdlint_installed: bool
 var _ignore: Resource
-var _gdlint_path: String
+
+var _gdlint_path: String = ""
+var _gdlint_version: String = ""
+
+func get_current_gdlint_path() -> String:
+	return _gdlint_path
+
+func get_current_gdlint_version() -> String:
+	return _gdlint_version
+
+func is_current_gdlint_installed() -> bool:
+	return get_current_gdlint_version().is_empty()
+
+
+func update_gdlint_info() -> void:
+	_gdlint_path = _get_gdlint_command()
+	_gdlint_version = ""
+	
+	if get_current_gdlint_path().is_empty():
+		return
+	
+	var output := []
+	exec(get_current_gdlint_path(), ["--version"], output)
+	_gdlint_version = output[0].strip()
+
+	# couldn't this be handled in the doc's code instead of over here?
+	if is_current_gdlint_installed():
+		_dock_ui.version.text = "Using %s" % output[0]
+	else:
+		_dock_ui.version.text = "gdlint not found!"
+
+func _get_gdlint_command(allow_file_ui := false) -> String:
+	var project_gdlint_path: String = ProjectSettings.get_setting(SETTINGS_GDLINT_PATH, "")
+	
+	if(project_gdlint_path.length()):
+		return project_gdlint_path
+
+	if OS.get_name() == "Windows":
+		return "gdlint"
+	
+	# macOS & Linux
+	var output := []
+	exec("python3", ["-m", "site", "--user-base"], output)
+	var python_bin_folder := (output[0] as String).strip_edges().path_join("bin")
+	var gdlint_exe := python_bin_folder.path_join("gdlint")
+	if FileAccess.file_exists(gdlint_exe):
+		return gdlint_exe
+	
+	# Linux dirty hardcoded fallback
+	if OS.get_name() == "Linux":
+		if FileAccess.file_exists("/usr/bin/gdlint"):
+			return "/usr/bin/gdlint"
+
+	if allow_file_ui:
+		var dia := EditorFileDialog()
+		dia.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
+		dia.access = EditorFileDialog.ACCESS_FILESYSTEM
+		dia.dialog_hide_on_ok = true
+		dia.show_hidden_files = true
+		dia.title = "Find gdlint executable"
+		dia.cancel_button_text = "Try default ('gdlint')"
+		dia.popup_file_dialog()
+		while dia.visible:
+			await dia.visibility_changed
+		if not dia.current_file.is_empty():
+			reutrn dia.current_file
+
+	# Global fallback
+	return "gdlint"
 
 
 func _enter_tree() -> void:
@@ -36,6 +103,7 @@ func _enter_tree() -> void:
 		ProjectSettings.set_setting(SETTINGS_GDLINT_PATH, "")
 
 	add_tool_menu_item("Install gdlint with pip", install_gdlint)
+	add_tool_menu_item("Re-find gdlint executable", update_gdlint_info.bind(true))
   
 	var project_gdlint_enabled: bool = ProjectSettings.get_setting(SETTINGS_GDLINT_ENABLED, true)
 	
@@ -55,8 +123,7 @@ func _enter_tree() -> void:
 	
 	script_editor = EditorInterface.get_script_editor()
 	script_editor.editor_script_changed.connect(_on_editor_script_changed)
-	_gdlint_path = get_gdlint_path()
-	get_gdlint_version()
+	update_gdlint_info()
 	prints("Loading GDLint Plugin success")
 
 # TODO: Reenable again?
@@ -82,16 +149,6 @@ func _on_editor_script_changed(script: Script) -> void:
 	on_resource_saved(script)
 
 
-func get_gdlint_version() -> void:
-	var output := []
-	exec(_gdlint_path, ["--version"], output)
-	_is_gdlint_installed = true if not output[0].is_empty() else false
-	if _is_gdlint_installed:
-		_dock_ui.version.text = "Using %s" % output[0]
-	else:
-		_dock_ui.version.text = "gdlint not found!"
-
-
 func _exit_tree() -> void:
 	if is_instance_valid(_dock_ui):
 		remove_control_from_bottom_panel(_dock_ui)
@@ -115,7 +172,7 @@ func on_resource_saved(resource: Resource) -> void:
 	var filepath: String = ProjectSettings.globalize_path(resource.resource_path)
 	var gdlint_output: Array = []
 	var output_array: PackedStringArray
-	var exit_code = exec(_gdlint_path, [filepath], gdlint_output, true)
+	var exit_code = exec(get_gdlint_path(), [filepath], gdlint_output, true)
 	if not exit_code == -1:
 		var output_string: String = gdlint_output[0]
 		output_array = output_string.replace(filepath+":", "Line ").split("\n")
@@ -198,28 +255,3 @@ func install_gdlint(python_command := "python"):
 	if not install_output.is_empty():
 		print_rich("[color=green]Install GDLint with pip:[/color]")
 		print(install_output[0])
-
-
-func get_gdlint_path() -> String:
-	var project_gdlint_path: String = ProjectSettings.get_setting(SETTINGS_GDLINT_PATH, "")
-	
-	if(project_gdlint_path.length()):
-		return project_gdlint_path
-
-	if OS.get_name() == "Windows":
-		return "gdlint"
-	
-	# macOS & Linux
-	var output := []
-	exec("python3", ["-m", "site", "--user-base"], output)
-	var python_bin_folder := (output[0] as String).strip_edges().path_join("bin")
-	if FileAccess.file_exists(python_bin_folder.path_join("gdlint")):
-		return python_bin_folder.path_join("gdlint")
-	
-	# Linux dirty hardcoded fallback
-	if OS.get_name() == "Linux":
-		if FileAccess.file_exists("/usr/bin/gdlint"):
-			return "/usr/bin/gdlint"
-	
-	# Global fallback
-	return "gdlint"
