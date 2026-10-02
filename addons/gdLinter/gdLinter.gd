@@ -72,9 +72,9 @@ func _enter_tree() -> void:
 func exec(path: String, arguments: PackedStringArray, output: Array=[],read_stderr: bool=false, open_console: bool=false):
 	if OS.get_name() == "Windows":
 		var args = PackedStringArray(["/C"]) + PackedStringArray([path]) + arguments
-		OS.execute("CMD.exe", args, output, read_stderr, open_console)
+		return OS.execute("CMD.exe", args, output, read_stderr, open_console)
 	else:
-		OS.execute(path, arguments, output, read_stderr, open_console)
+		return OS.execute(path, arguments, output, read_stderr, open_console)
 
 func _on_editor_script_changed(script: Script) -> void:
 	_dock_ui.clear_items()
@@ -200,10 +200,14 @@ func install_gdlint(python_command := "python"):
 
 
 func get_gdlint_path() -> String:
-	var project_gdlint_path: String = ProjectSettings.get_setting(SETTINGS_GDLINT_PATH, "")
+	# First it's searched in $PATH (returning just the name of the binary), and
+	# if not found, it's searched in the gdtoolkit package installed via pip or pipx
+	if not find_in_path("gdlint").is_empty():
+		return "gdlint"
 	
-	if(project_gdlint_path.length()):
-		return project_gdlint_path
+	var pip_path := find_pip_gdtoolkit_bin("gdlint")
+	if not pip_path.is_empty():
+		return pip_path
 
 	if OS.get_name() == "Windows":
 		return "gdlint"
@@ -222,3 +226,69 @@ func get_gdlint_path() -> String:
 	
 	# Global fallback
 	return "gdlint"
+
+
+# Returns the full path of the executable `bin` installed by the gdtoolkit
+# package via pip or pipx, or an empty string if not found
+func find_pip_gdtoolkit_bin(bin: String) -> String:
+	# `pipx runpip <package>` is pip running inside the pipx venv of the package
+	var pip_commands: Array[Array] = [
+		["pip3", []],
+		["pip", []],
+		["python3", ["-m", "pip"]],
+		["python", ["-m", "pip"]],
+		["pipx", ["runpip", "gdtoolkit"]],
+	]
+	for pip_command: Array in pip_commands:
+		if find_in_path(pip_command[0]).is_empty():
+			continue
+		var args: Array = pip_command[1].duplicate()
+		args.append_array(["show", "-f", "gdtoolkit"])
+		var output := []
+		if OS.execute(pip_command[0], args, output) != 0 or output.is_empty():
+			continue
+		var path := pip_show_find_bin(output[0], bin)
+		if not path.is_empty():
+			return path
+	return ""
+
+
+# Returns the full path of the executable `bin` found in $PATH, or an empty
+# string if not found.
+# Used to check if a command exists before running it, as `OS.execute` prints
+# an error on Windows when the executable can't be found
+static func find_in_path(bin: String) -> String:
+	var is_windows := OS.get_name() == "Windows"
+	var extensions: PackedStringArray = [""]
+	if is_windows:
+		var pathext := OS.get_environment("PATHEXT")
+		extensions = (pathext if not pathext.is_empty() else ".COM;.EXE;.BAT;.CMD").split(";", false)
+
+	var separator := ";" if is_windows else ":"
+	for folder: String in OS.get_environment("PATH").split(separator, false):
+		for extension: String in extensions:
+			var path := folder.replace("\\", "/").path_join(bin + extension.to_lower())
+			if FileAccess.file_exists(path):
+				return path
+	return ""
+
+
+# Given the output of `pip show -f <package>`, returns the full path of the
+# executable named `bin` installed by that package, or an empty string if not found
+static func pip_show_find_bin(pip_output: String, bin: String) -> String:
+	var location := ""
+	var file := ""
+	# pip on Windows outputs CRLF line endings
+	for line: String in pip_output.replace("\r", "").split("\n"):
+		if location.is_empty() and line.begins_with("Location:"):
+			location = line.trim_prefix("Location:").strip_edges()
+		elif file.is_empty() and line.begins_with(" "):
+			var candidate := line.strip_edges().replace("\\", "/")
+			if candidate.ends_with("/" + bin) or candidate.ends_with("/" + bin + ".exe"):
+				file = candidate
+
+	if location.is_empty() or file.is_empty():
+		return ""
+
+	var path := location.replace("\\", "/").path_join(file).simplify_path()
+	return path if FileAccess.file_exists(path) else ""
